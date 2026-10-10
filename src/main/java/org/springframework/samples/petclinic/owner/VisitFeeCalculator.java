@@ -16,74 +16,93 @@
 package org.springframework.samples.petclinic.owner;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.util.Locale;
 
 import org.springframework.stereotype.Component;
 
 /**
- * Works out what a visit costs. Ported from the old front desk system.
+ * Calculates the fee for a visit.
  * <p>
  * The nightly billing export calls {@link #feeFor(Owner, Pet, Visit)} once for each
- * visit. Check with the front desk before you change any of the numbers.
+ * visit.
  */
 @Component
 public class VisitFeeCalculator {
 
+	private static final BigDecimal BASE_EXAM_FEE = new BigDecimal("45.00");
+
+	private static final BigDecimal YOUNG_PET_DISCOUNT = new BigDecimal("10.00");
+
+	private static final BigDecimal SENIOR_SURCHARGE = new BigDecimal("15.00");
+
+	private static final BigDecimal EXOTIC_MULTIPLIER = new BigDecimal("1.5");
+
+	private static final BigDecimal RABIES_VACCINE_FEE = new BigDecimal("25.00");
+
+	private static final BigDecimal CAT_SURGERY_FEE = new BigDecimal("120.00");
+
+	private static final BigDecimal SURGERY_FEE = new BigDecimal("180.00");
+
+	private static final BigDecimal MULTI_PET_RATE = new BigDecimal("0.90");
+
+	private static final BigDecimal SATURDAY_SURCHARGE = new BigDecimal("20.00");
+
+	private static final int SENIOR_AGE = 10;
+
+	private static final int MULTI_PET_THRESHOLD = 3;
+
+	/**
+	 * Returns the fee for a visit, in dollars, to the cent.
+	 */
 	public BigDecimal feeFor(Owner owner, Pet pet, Visit visit) {
-		double fee = 45.0;
-		String type = "";
-		if (pet.getType() != null && pet.getType().getName() != null) {
-			type = pet.getType().getName().toLowerCase();
+		String description = lowerCase(visit.getDescription());
+		if (description.contains("follow")) {
+			return BigDecimal.ZERO.setScale(2); // follow-ups are free
 		}
+
+		String type = pet.getType() == null ? "" : lowerCase(pet.getType().getName());
 		LocalDate visitDate = visit.getDate();
 		int age = visitDate.getYear() - pet.getBirthDate().getYear();
 
-		if (type.equals("dog") || type.equals("cat")) {
-			if (age < 1) {
-				// puppy and kitten rate
-				fee = fee - 10;
-			}
-			else {
-				// seniors (10 and up) get extra bloodwork
-				if (age > 10) {
-					fee = fee + 15;
-				}
-			}
+		BigDecimal fee = examFee(type, age).add(procedureFees(type, description));
+		if (owner.getPets().size() >= MULTI_PET_THRESHOLD) {
+			fee = fee.multiply(MULTI_PET_RATE);
 		}
-		else if (type.equals("lizard") || type.equals("snake")) {
-			// exotics take longer
-			fee = fee * 1.5;
-		}
-
-		String desc = visit.getDescription() == null ? "" : visit.getDescription().toLowerCase();
-		if (desc.contains("rabies")) {
-			fee = fee + 25;
-		}
-		if (desc.contains("spay") || desc.contains("neuter")) {
-			if (type.equals("cat")) {
-				fee = fee + 120;
-			}
-			else {
-				fee = fee + 180;
-			}
-		}
-		if (desc.contains("follow")) {
-			// follow-ups are free
-			fee = 0;
-		}
-
-		// 10% off for families with 3 or more pets
-		if (owner.getPets().size() >= 3) {
-			fee = fee * 0.9;
-		}
-
 		if (visitDate.getDayOfWeek() == DayOfWeek.SATURDAY) {
-			fee = fee + 20;
+			fee = fee.add(SATURDAY_SURCHARGE);
 		}
+		return fee.setScale(2, RoundingMode.HALF_UP);
+	}
 
-		// round up to the next dollar
-		return BigDecimal.valueOf(Math.ceil(fee)).setScale(2);
+	private BigDecimal examFee(String type, int age) {
+		return switch (type) {
+			case "dog", "cat" -> {
+				if (age < 1) {
+					yield BASE_EXAM_FEE.subtract(YOUNG_PET_DISCOUNT);
+				}
+				yield age >= SENIOR_AGE ? BASE_EXAM_FEE.add(SENIOR_SURCHARGE) : BASE_EXAM_FEE;
+			}
+			case "lizard", "snake" -> BASE_EXAM_FEE.multiply(EXOTIC_MULTIPLIER);
+			default -> BASE_EXAM_FEE;
+		};
+	}
+
+	private BigDecimal procedureFees(String type, String description) {
+		BigDecimal fees = BigDecimal.ZERO;
+		if (description.contains("rabies")) {
+			fees = fees.add(RABIES_VACCINE_FEE);
+		}
+		if (description.contains("spay") || description.contains("neuter")) {
+			fees = fees.add(type.equals("cat") ? CAT_SURGERY_FEE : SURGERY_FEE);
+		}
+		return fees;
+	}
+
+	private static String lowerCase(String value) {
+		return value == null ? "" : value.toLowerCase(Locale.ROOT);
 	}
 
 }
