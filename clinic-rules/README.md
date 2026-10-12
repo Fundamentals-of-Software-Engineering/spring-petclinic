@@ -31,25 +31,26 @@ The first run downloads Maven and ArchUnit, so you need wifi. Before you start, 
 ## What to build
 
 Open `src/test/java/com/example/clinic/ArchitectureTest.java`. ArchUnit is already set up there.
-Add three rules:
+Add two rules:
 
 1. **Controllers never talk to repositories directly.** No class in `web` depends on a class in
    `repository`.
 2. **The domain depends on nothing else in the app.** Classes in `domain` only use other `domain`
    classes and Java's own classes.
-3. **Repositories live in the repository package.** Every class whose name ends in `Repository` is
-   in `repository`.
 
 Run `./mvnw test` after each rule. Before you run it, guess: will it pass?
 
 At least one rule will fail. When it does, read the whole failure message. Then fix the code, not
 the rule.
 
-**Stretch goal:** write the whole `web`, `service`, `repository` layering as one rule.
+**Stretch goals:**
+
+- Every class whose name ends in `Repository` lives in `repository`.
+- Write the whole `web`, `service`, `repository` layering as one rule.
 
 ## Done means
 
-- `./mvnw test` shows `Tests run: 3` (or 4 with the stretch goal) and `BUILD SUCCESS`.
+- `./mvnw test` shows `Tests run: 2` (more with the stretch goals) and `BUILD SUCCESS`.
 - You fixed the code that broke a rule.
 - You can explain, in your own words, every failure you saw along the way.
 
