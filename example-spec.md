@@ -1,7 +1,7 @@
 # Spec: Pet weight
 
-The spec for the lab. Read it, then give the whole thing to your agent. It was written against our
-PetClinic (Sept 29, 2026). It's one way to do it, not the only way.
+The detailed version of the lab's spec, with every decision spelled out and the tests at the end.
+It's what an agent needs to make `PetWeightTests` pass. It's one way to do it, not the only way.
 
 ## Goal
 
