@@ -1,10 +1,7 @@
-> **Stop.** This is a finished spec for the lab. Don't read it until the debrief (Part 3). Write
-> your own spec first.
-
 # Spec: Pet weight
 
-An example for the debrief. It was written against spring-petclinic `500158f` (Sept 29, 2026). It's
-one way to do it, not the only way.
+The spec for the lab. Read it, then give the whole thing to your agent. It was written against our
+PetClinic (Sept 29, 2026). It's one way to do it, not the only way.
 
 ## Goal
 
